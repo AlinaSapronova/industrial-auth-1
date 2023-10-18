@@ -1,6 +1,8 @@
 class CommentsController < ApplicationController
   before_action :set_comment, only: %i[ show edit update destroy ]
   before_action :is_an_authorized_user, only: [:destroy, :create]
+ 
+
 
   # GET /comments or /comments.json
   def index
@@ -51,11 +53,13 @@ class CommentsController < ApplicationController
 
   # DELETE /comments/1 or /comments/1.json
   def destroy
+    if current_user == @comment.author
     @comment.destroy
     respond_to do |format|
       format.html { redirect_back fallback_location: root_url, notice: "Comment was successfully destroyed." }
       format.json { head :no_content }
     end
+  end
   end
 
   private
@@ -66,10 +70,17 @@ class CommentsController < ApplicationController
 
     def is_an_authorized_user
       @photo = Photo.find(params.fetch(:comment).fetch(:photo_id))
-      if current_user == @photo.owner && !@photo.owner.private? && !current_user.leaders.include?(@photo.owner)
+      if current_user != @photo.owner && @photo.owner.private? && !current_user.leaders.include?(@photo.owner)
         redirect_back fallback_location: root_url, alert: "Not authorized"
       end
     end
+
+
+    # def ensure_current_user_is_author
+    #   if current_user != @comment.author
+    #     redirect_back fallback_location: root_url, alert: "You're not authorized for that."
+    #   end
+    # end
 
     # Only allow a list of trusted parameters through.
     def comment_params
